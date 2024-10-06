@@ -1,30 +1,38 @@
 import socket
 import threading
 
-# メッセージを受信する関数
-def recv_msg(sock):
+def receive_messages(sock):
     while True:
         try:
-            msg = sock.recv(1024).decode('utf-8')
-            if msg: print(f"\n{msg}")
-        except: 
-            print("接続が切れました。")
+            message = sock.recv(1024).decode('utf-8')
+            if message:
+                print(f"\n{message}")
+        except:
+            print("An error occurred! Closing connection...")
             sock.close()
             break
 
 def main():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('127.0.0.1', 12345))  # サーバに接続
+    host = '127.0.0.1'  # Server address
+    port = 12345  # Server port
 
-    threading.Thread(target=recv_msg, args=(sock,), daemon=True).start()  # 受信スレッド開始
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((host, port))
 
-    print("接続しました。メッセージを入力してください（'exit'で終了）:")
+    # Start a thread to receive messages
+    thread = threading.Thread(target=receive_messages, args=(client_socket,))
+    thread.daemon = True
+    thread.start()
+
+    print("Connected to the server. Type your messages below:")
+    
     while True:
-        msg = input()
-        if msg.lower() == 'exit': break
-        sock.send(msg.encode('utf-8'))  # メッセージ送信
+        message = input()
+        if message.lower() == 'exit':
+            break
+        client_socket.send(message.encode('utf-8'))
 
-    sock.close()
+    client_socket.close()
 
 if __name__ == "__main__":
     main()
